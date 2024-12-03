@@ -54,7 +54,7 @@
 </head>
 <body>
   <div class="instructions">
-    <h1> v1.1 متاهة</h1>
+    <h1> v1.3 متاهة</h1>
     <p>وصل المربع الأخضر إلى المربع الأزرق (يمكن تحريك المتاهة بالاصباعين)!</p>
   </div>
 
@@ -254,7 +254,13 @@
           drawMaze();
           initialTouch.x = e.touches[0].clientX;
           initialTouch.y = e.touches[0].clientY;
-          if (player.x === goal.x && player.y === goal.y) alert('تهانينا!');
+          if (player.x === goal.x && player.y === goal.y) {
+            if(confirm('مبروك! (عشان تعرف الجواب اضغط "موافق/ok"، او لو بتلعب ثاني اضغط "الغاء الامر/cancel")')){
+              window.location.href="https://www.solidbackgrounds.com/images/3508x2480/3508x2480-sky-blue-solid-color-background.jpg";
+            }else {
+              window.location.reload();
+            };
+          }
         }
       }
     });
