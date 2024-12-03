@@ -35,12 +35,13 @@
       width: 1200px; /* Larger than the container for horizontal scrolling */
       height: 1200px; /* Larger than the container for vertical scrolling */
     }
-    .zoom-buttons {
+    .zoom-buttons{
+      margin-top: 20px;
       margin-bottom: 20px;
       display: flex;
       gap: 10px;
     }
-    .zoom-buttons button {
+    .zoom-buttons button{
       padding: 10px;
       font-size: 1.2em;
       cursor: pointer;
@@ -53,10 +54,20 @@
 </head>
 <body>
   <div class="instructions">
-    <h1> v14 متاهة تفاعلية</h1>
-    <p>اسحب المربع الأخضر للوصول إلى المربع الأزرق دون المرور عبر الجدران!</p>
+    <h1> v1.1 متاهة</h1>
+    <p>وصل المربع الأخضر إلى المربع الأزرق (يمكن تحريك المتاهة بالاصباعين)!</p>
   </div>
-  
+
+  <div class="grid-size-selector" dir="rtl">
+    <label for="gridSizeSelect">اختر صعوبة المتاهة: </label>
+    <select id="gridSizeSelect">
+      <option value="20">سهل</option>
+      <option value="30" selected>متوسط</option>
+      <option value="40">صعب</option>
+      <option value="50">اكثر صعوبة</option>
+    </select>
+  </div>
+
   <!-- Zoom Buttons -->
   <div class="zoom-buttons">
     <button id="zoomInBtn">تكبير</button>
@@ -69,10 +80,24 @@
 
 
   <script>
+
+
+    function getURLParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
     const canvas = document.getElementById('mazeCanvas');
     const container = document.getElementById('mazeContainer');
     const ctx = canvas.getContext('2d');
-    const gridSize = 40; // Adjust gridSize to match larger canvas
+
+    // Set gridSize from URL or default to 40
+    const gridSizeParam = parseInt(getURLParameter('gridSize'), 10);
+
+    // Update the dropdown to reflect the current gridSize
+    const gridSizeSelect = document.getElementById('gridSizeSelect');
+    const gridSize = isNaN(gridSizeParam) ? 30 : gridSizeParam;; // Adjust gridSize to match larger canvas
+    gridSizeSelect.value = gridSize;
     const cellSize = canvas.width / gridSize;
     let maze = [];
     const directions = [
@@ -80,7 +105,7 @@
     ];
 
     let player = { x: 1, y: 1 };
-    const goal = { x: gridSize - 2, y: gridSize - 2 };
+    const goal = { x: gridSize - 3, y: gridSize - 3 };
     let dragging = false;
 
     let scale = 1; // Zoom scale
@@ -252,6 +277,15 @@
         scale -= 0.1;
         drawMaze();
       }
+    });
+
+
+    // Handle dropdown change
+    gridSizeSelect.addEventListener('change', (e) => {
+      const selectedSize = e.target.value;
+      const url = new URL(window.location.href);
+      url.searchParams.set('gridSize', selectedSize); // Update URL parameter
+      window.location.href = url; // Reload the page with the new parameter
     });
 
     maze = initializeMaze(gridSize);
