@@ -39,7 +39,7 @@
 </head>
 <body>
   <div class="instructions">
-    <h1>متاهة تفاعلية</h1>
+    <h1>v1متاهة تفاعلية</h1>
     <p>اسحب المربع الأخضر للوصول إلى المربع الأزرق دون المرور عبر الجدران!</p>
   </div>
   <div class="maze-container" id="mazeContainer">
@@ -63,6 +63,7 @@
     // Multi-touch tracking
     let touchCount = 0;
     let initialTouch = { x: 0, y: 0 };  // For dragging
+    let lastTouch = { x: 0, y: 0 };  // For scrolling
 
     function initializeMaze(size) {
       const maze = [];
@@ -162,16 +163,32 @@
           initialTouch.x = e.touches[0].clientX;
           initialTouch.y = e.touches[0].clientY;
         }
+      } else if (touchCount === 2) {
+        lastTouch.x = e.touches[1].clientX;
+        lastTouch.y = e.touches[1].clientY;
       }
     });
 
     container.addEventListener('touchmove', (e) => {
-      if (touchCount > 1) {
-        return; // Allow default scrolling behavior for two-finger touch
-      }
+      touchCount = e.touches.length;
 
-      if (dragging) {
-        e.preventDefault();
+      if (touchCount === 2) {
+        // Handle scrolling with two fingers
+        e.preventDefault(); // Prevent default scrolling
+        const newTouchX = e.touches[1].clientX;
+        const newTouchY = e.touches[1].clientY;
+
+        const deltaX = newTouchX - lastTouch.x;
+        const deltaY = newTouchY - lastTouch.y;
+
+        container.scrollLeft -= deltaX; // Scroll the maze container horizontally
+        container.scrollTop -= deltaY; // Scroll the maze container vertically
+
+        lastTouch.x = newTouchX;
+        lastTouch.y = newTouchY;
+      } else if (touchCount === 1 && dragging) {
+        // Handle dragging with one finger
+        e.preventDefault(); // Prevent canvas scrolling
         const { x, y } = getPointerPos(e);
         const dx = e.touches[0].clientX - initialTouch.x;
         const dy = e.touches[0].clientY - initialTouch.y;
