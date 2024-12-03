@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>متاهة تفاعلية</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      min-height: 100vh;
+      background-color: #f4f4f4;
+      text-align: center;
+    }
+    .instructions {
+      margin-bottom: 20px;
+      font-size: 1.2em;
+      color: #333;
+    }
+    .maze-container {
+      width: 90%;
+      max-width: 800px;
+      height: 400px;
+      overflow: auto; /* Allow scrolling */
+      border: 2px solid #333;
+      background-color: #fff;
+      position: relative;
+      touch-action: none; /* Prevent default scrolling behavior */
+    }
+    canvas {
+      display: block;
+      width: 1200px; /* Larger than the container for horizontal scrolling */
+      height: 1200px; /* Larger than the container for vertical scrolling */
+    }
+  </style>
+</head>
+<body>
+  <div class="instructions">
+    <h1>متاهة تفاعلية</h1>
+    <p>اسحب المربع الأخضر للوصول إلى المربع الأزرق دون المرور عبر الجدران!</p>
+  </div>
+  <div class="maze-container" id="mazeContainer">
+    <canvas id="mazeCanvas" width="1200" height="1200"></canvas>
+  </div>
+  <script>
+    const canvas = document.getElementById('mazeCanvas');
+    const container = document.getElementById('mazeContainer');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 40; // Adjust gridSize to match larger canvas
+    const cellSize = canvas.width / gridSize;
+    let maze = [];
+    const directions = [
+      [0, -1], [1, 0], [0, 1], [-1, 0]
+    ];
+
+    let player = { x: 1, y: 1 };
+    const goal = { x: gridSize - 2, y: gridSize - 2 };
+    let dragging = false;
+
+    // Multi-touch tracking
+    let touchCount = 0;
+
+    function initializeMaze(size) {
+      const maze = [];
+      for (let y = 0; y < size; y++) {
+        const row = [];
+        for (let x = 0; x < size; x++) {
+          row.push(1);
+        }
+        maze.push(row);
+      }
+      return maze;
+    }
+
+    function generateMazeWithSinglePath(startX, startY, endX, endY) {
+      maze[startY][startX] = 0;
+      let stack = [[startX, startY]];
+
+      while (stack.length > 0) {
+        let [x, y] = stack[stack.length - 1];
+
+        if (x === endX && y === endY) {
+          stack.pop();
+          continue;
+        }
+
+        let shuffledDirections = directions.sort(() => Math.random() - 0.5);
+        let carved = false;
+
+        for (const [dx, dy] of shuffledDirections) {
+          const nx = x + dx * 2;
+          const ny = y + dy * 2;
+
+          if (
+            nx > 0 &&
+            nx < gridSize - 1 &&
+            ny > 0 &&
+            ny < gridSize - 1 &&
+            maze[ny][nx] === 1
+          ) {
+            maze[y + dy][x + dx] = 0;
+            maze[ny][nx] = 0;
+            stack.push([nx, ny]);
+            carved = true;
+            break;
+          }
+        }
+
+        if (!carved) stack.pop();
+      }
+    }
+
+    function isValidMove(x, y) {
+      return x >= 0 && x < gridSize && y >= 0 && y < gridSize && maze[y][x] === 0;
+    }
+
+    function isValidDragMove(startX, startY, endX, endY) {
+      const dx = endX - startX;
+      const dy = endY - startY;
+
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) return false;
+      if (!isValidMove(endX, endY)) return false;
+
+      return true;
+    }
+
+    function drawMaze() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          ctx.fillStyle = maze[y][x] === 1 ? '#000' : '#fff';
+          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+      }
+
+      ctx.fillStyle = '#32CD32';
+      ctx.fillRect(player.x * cellSize, player.y * cellSize, cellSize, cellSize);
+
+      ctx.fillStyle = '#87ceeb';
+      ctx.fillRect(goal.x * cellSize, goal.y * cellSize, cellSize, cellSize);
+    }
+
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.touches[0].clientX - rect.left) / cellSize);
+      const y = Math.floor((e.touches[0].clientY - rect.top) / cellSize);
+      return { x, y };
+    }
+
+    container.addEventListener('touchstart', (e) => {
+      touchCount = e.touches.length;
+
+      if (touchCount === 1) {
+        const { x, y } = getPointerPos(e);
+        if (x === player.x && y === player.y) dragging = true;
+      }
+    });
+
+    container.addEventListener('touchmove', (e) => {
+      if (touchCount > 1) {
+        return; // Let default scrolling behavior happen
+      }
+
+      if (dragging) {
+        e.preventDefault();
+        const { x, y } = getPointerPos(e);
+        if (isValidDragMove(player.x, player.y, x, y)) {
+          player.x = x;
+          player.y = y;
+          drawMaze();
+          if (player.x === goal.x && player.y === goal.y) alert('تهانينا!');
+        }
+      }
+    });
+
+    container.addEventListener('touchend', (e) => {
+      touchCount = e.touches.length;
+      if (touchCount === 0) dragging = false;
+    });
+
+    maze = initializeMaze(gridSize);
+    generateMazeWithSinglePath(1, 1, gridSize - 2, gridSize - 2);
+    drawMaze();
+  </script>
+</body>
+</html>
