@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> v7 متاهة تفاعلية</title>
+  <title> v9 متاهة تفاعلية</title>
   <style>
     body {
       display: flex;
@@ -24,7 +24,7 @@
       width: 90%;
       max-width: 800px;
       height: 400px;
-      overflow: hidden;
+      overflow: auto;
       border: 2px solid #333;
       background-color: #fff;
       position: relative;
@@ -32,6 +32,21 @@
     }
     canvas {
       display: block;
+      width: 1200px;
+      height: 1200px;
+    }
+    .zoom-buttons {
+      margin-top: 20px;
+    }
+    .zoom-button {
+      font-size: 1.2em;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -41,13 +56,21 @@
     <p>اسحب المربع الأخضر للوصول إلى المربع الأزرق دون المرور عبر الجدران!</p>
   </div>
   <div class="maze-container" id="mazeContainer">
-    <canvas id="mazeCanvas" width="600" height="600"></canvas>
+    <canvas id="mazeCanvas" width="1200" height="1200"></canvas>
   </div>
+
+  <!-- Zoom buttons -->
+  <div class="zoom-buttons">
+    <button class="zoom-button" id="zoomInBtn">تكبير</button>
+    <button class="zoom-button" id="zoomOutBtn">تصغير</button>
+  </div>
+
   <script>
     const canvas = document.getElementById('mazeCanvas');
     const container = document.getElementById('mazeContainer');
     const ctx = canvas.getContext('2d');
     const gridSize = 40;
+    const cellSize = canvas.width / gridSize;
     let maze = [];
     const directions = [
       [0, -1], [1, 0], [0, 1], [-1, 0]
@@ -134,7 +157,7 @@
     function drawMaze() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const scaledCellSize = (canvas.width / gridSize) * scale;
+      const scaledCellSize = cellSize * scale;
       for (let y = 0; y < gridSize; y++) {
         for (let x = 0; x < gridSize; x++) {
           ctx.fillStyle = maze[y][x] === 1 ? '#000' : '#fff';
@@ -142,19 +165,17 @@
         }
       }
 
-      // Draw player
       ctx.fillStyle = '#32CD32';
       ctx.fillRect(player.x * scaledCellSize, player.y * scaledCellSize, scaledCellSize, scaledCellSize);
 
-      // Draw goal
       ctx.fillStyle = '#87ceeb';
       ctx.fillRect(goal.x * scaledCellSize, goal.y * scaledCellSize, scaledCellSize, scaledCellSize);
     }
 
     function getPointerPos(e) {
       const rect = canvas.getBoundingClientRect();
-      const x = Math.floor((e.touches[0].clientX - rect.left) / (canvas.width / gridSize));
-      const y = Math.floor((e.touches[0].clientY - rect.top) / (canvas.width / gridSize));
+      const x = Math.floor((e.touches[0].clientX - rect.left) / (cellSize * scale));
+      const y = Math.floor((e.touches[0].clientY - rect.top) / (cellSize * scale));
       return { x, y };
     }
 
@@ -176,6 +197,8 @@
         }
       } else if (touchCount === 2) {
         initialDistance = calculateDistance(e.touches[0], e.touches[1]);
+        lastTouch.x = e.touches[1].clientX;
+        lastTouch.y = e.touches[1].clientY;
       }
     });
 
@@ -215,6 +238,21 @@
     container.addEventListener('touchend', (e) => {
       touchCount = e.touches.length;
       if (touchCount === 0) dragging = false;
+    });
+
+    // Zoom buttons
+    document.getElementById('zoomInBtn').addEventListener('click', () => {
+      if (scale < maxScale) {
+        scale += 0.2;
+        drawMaze();
+      }
+    });
+
+    document.getElementById('zoomOutBtn').addEventListener('click', () => {
+      if (scale > minScale) {
+        scale -= 0.2;
+        drawMaze();
+      }
     });
 
     maze = initializeMaze(gridSize);
