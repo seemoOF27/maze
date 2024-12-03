@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> v9 متاهة تفاعلية</title>
+  <title>متاهة تفاعلية</title>
   <style>
     body {
       display: flex;
@@ -24,52 +24,32 @@
       width: 90%;
       max-width: 800px;
       height: 400px;
-      overflow: auto;
+      overflow: auto; /* Allow scrolling */
       border: 2px solid #333;
       background-color: #fff;
       position: relative;
-      touch-action: none;
+      touch-action: none; /* Prevent default scrolling behavior */
     }
     canvas {
       display: block;
-      width: 1200px;
-      height: 1200px;
-    }
-    .zoom-buttons {
-      margin-top: 20px;
-    }
-    .zoom-button {
-      font-size: 1.2em;
-      padding: 10px 20px;
-      margin: 5px;
-      cursor: pointer;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
+      width: 1200px; /* Larger than the container for horizontal scrolling */
+      height: 1200px; /* Larger than the container for vertical scrolling */
     }
   </style>
 </head>
 <body>
   <div class="instructions">
-    <h1>متاهة تفاعلية</h1>
+    <h1> v11 متاهة تفاعلية</h1>
     <p>اسحب المربع الأخضر للوصول إلى المربع الأزرق دون المرور عبر الجدران!</p>
   </div>
   <div class="maze-container" id="mazeContainer">
     <canvas id="mazeCanvas" width="1200" height="1200"></canvas>
   </div>
-
-  <!-- Zoom buttons -->
-  <div class="zoom-buttons">
-    <button class="zoom-button" id="zoomInBtn">تكبير</button>
-    <button class="zoom-button" id="zoomOutBtn">تصغير</button>
-  </div>
-
   <script>
     const canvas = document.getElementById('mazeCanvas');
     const container = document.getElementById('mazeContainer');
     const ctx = canvas.getContext('2d');
-    const gridSize = 40;
+    const gridSize = 40; // Adjust gridSize to match larger canvas
     const cellSize = canvas.width / gridSize;
     let maze = [];
     const directions = [
@@ -77,18 +57,11 @@
     ];
 
     let player = { x: 1, y: 1 };
-    const goal = { x: gridSize - 3, y: gridSize - 3 };
+    const goal = { x: gridSize - 2, y: gridSize - 2 };
     let dragging = false;
 
+    // Multi-touch tracking
     let touchCount = 0;
-    let initialTouch = { x: 0, y: 0 };
-    let lastTouch = { x: 0, y: 0 };
-
-    // Variables for zoom
-    let initialDistance = 0; // The distance between two touches at the start
-    let scale = 1; // Default scale factor
-    const minScale = 0.5; // Minimum scale (zoom out)
-    const maxScale = 2; // Maximum scale (zoom in)
 
     function initializeMaze(size) {
       const maze = [];
@@ -157,79 +130,48 @@
     function drawMaze() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const scaledCellSize = cellSize * scale;
       for (let y = 0; y < gridSize; y++) {
         for (let x = 0; x < gridSize; x++) {
           ctx.fillStyle = maze[y][x] === 1 ? '#000' : '#fff';
-          ctx.fillRect(x * scaledCellSize, y * scaledCellSize, scaledCellSize, scaledCellSize);
+          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
         }
       }
 
       ctx.fillStyle = '#32CD32';
-      ctx.fillRect(player.x * scaledCellSize, player.y * scaledCellSize, scaledCellSize, scaledCellSize);
+      ctx.fillRect(player.x * cellSize, player.y * cellSize, cellSize, cellSize);
 
       ctx.fillStyle = '#87ceeb';
-      ctx.fillRect(goal.x * scaledCellSize, goal.y * scaledCellSize, scaledCellSize, scaledCellSize);
+      ctx.fillRect(goal.x * cellSize, goal.y * cellSize, cellSize, cellSize);
     }
 
     function getPointerPos(e) {
       const rect = canvas.getBoundingClientRect();
-      const x = Math.floor((e.touches[0].clientX - rect.left) / (cellSize * scale));
-      const y = Math.floor((e.touches[0].clientY - rect.top) / (cellSize * scale));
+      const x = Math.floor((e.touches[0].clientX - rect.left) / cellSize);
+      const y = Math.floor((e.touches[0].clientY - rect.top) / cellSize);
       return { x, y };
-    }
-
-    function calculateDistance(touch1, touch2) {
-      return Math.sqrt(
-        Math.pow(touch2.clientX - touch1.clientX, 2) + Math.pow(touch2.clientY - touch1.clientY, 2)
-      );
     }
 
     container.addEventListener('touchstart', (e) => {
       touchCount = e.touches.length;
-      
+
       if (touchCount === 1) {
         const { x, y } = getPointerPos(e);
-        if (x === player.x && y === player.y) {
-          dragging = true;
-          initialTouch.x = e.touches[0].clientX;
-          initialTouch.y = e.touches[0].clientY;
-        }
-      } else if (touchCount === 2) {
-        initialDistance = calculateDistance(e.touches[0], e.touches[1]);
-        lastTouch.x = e.touches[1].clientX;
-        lastTouch.y = e.touches[1].clientY;
+        if (x === player.x && y === player.y) dragging = true;
       }
     });
 
     container.addEventListener('touchmove', (e) => {
-      touchCount = e.touches.length;
+      if (touchCount > 1) {
+        return; // Let default scrolling behavior happen
+      }
 
-      if (touchCount === 2) {
-        // Zoom in/out with two fingers
-        e.preventDefault(); // Prevent default zoom behavior
-
-        const newDistance = calculateDistance(e.touches[0], e.touches[1]);
-        const scaleFactor = newDistance / initialDistance;
-
-        // Apply zoom scale within bounds
-        scale = Math.min(maxScale, Math.max(minScale, scale * scaleFactor));
-
-        initialDistance = newDistance;
-        drawMaze();
-      } else if (touchCount === 1 && dragging) {
-        // Handle dragging with one finger
+      if (dragging) {
         e.preventDefault();
         const { x, y } = getPointerPos(e);
-        const dx = e.touches[0].clientX - initialTouch.x;
-        const dy = e.touches[0].clientY - initialTouch.y;
-
         if (isValidDragMove(player.x, player.y, x, y)) {
           player.x = x;
           player.y = y;
           drawMaze();
-          initialTouch.x = e.touches[0].clientX;
-          initialTouch.y = e.touches[0].clientY;
           if (player.x === goal.x && player.y === goal.y) alert('تهانينا!');
         }
       }
@@ -238,21 +180,6 @@
     container.addEventListener('touchend', (e) => {
       touchCount = e.touches.length;
       if (touchCount === 0) dragging = false;
-    });
-
-    // Zoom buttons
-    document.getElementById('zoomInBtn').addEventListener('click', () => {
-      if (scale < maxScale) {
-        scale += 0.2;
-        drawMaze();
-      }
-    });
-
-    document.getElementById('zoomOutBtn').addEventListener('click', () => {
-      if (scale > minScale) {
-        scale -= 0.2;
-        drawMaze();
-      }
     });
 
     maze = initializeMaze(gridSize);
