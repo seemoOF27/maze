@@ -62,6 +62,7 @@
 
     // Multi-touch tracking
     let touchCount = 0;
+    let initialTouch = { x: 0, y: 0 };  // For dragging
 
     function initializeMaze(size) {
       const maze = [];
@@ -153,25 +154,35 @@
 
     container.addEventListener('touchstart', (e) => {
       touchCount = e.touches.length;
-
+      
       if (touchCount === 1) {
         const { x, y } = getPointerPos(e);
-        if (x === player.x && y === player.y) dragging = true;
+        if (x === player.x && y === player.y) {
+          dragging = true;
+          initialTouch.x = e.touches[0].clientX;
+          initialTouch.y = e.touches[0].clientY;
+        }
       }
     });
 
     container.addEventListener('touchmove', (e) => {
       if (touchCount > 1) {
-        return; // Let default scrolling behavior happen
+        return; // Allow default scrolling behavior for two-finger touch
       }
 
       if (dragging) {
         e.preventDefault();
         const { x, y } = getPointerPos(e);
+        const dx = e.touches[0].clientX - initialTouch.x;
+        const dy = e.touches[0].clientY - initialTouch.y;
+
+        // Move only if the drag is valid
         if (isValidDragMove(player.x, player.y, x, y)) {
           player.x = x;
           player.y = y;
           drawMaze();
+          initialTouch.x = e.touches[0].clientX;
+          initialTouch.y = e.touches[0].clientY;
           if (player.x === goal.x && player.y === goal.y) alert('تهانينا!');
         }
       }
