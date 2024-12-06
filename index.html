@@ -106,11 +106,12 @@
     ];
 
     let player = { x: 1, y: 1 };
-    const goal = { x: gridSize - 3, y: gridSize - 3 };
+    let goalMinus = gridSize == 13 ? 2 : 3;
+    const goal = { x: gridSize - goalMinus, y: gridSize - goalMinus };
     let dragging = false;
 
     let scale = 1; // Zoom scale
-    const minScale = 0.5; // Minimum zoom scale
+    const minScale = 0.3; // Minimum zoom scale
     const maxScale = 2; // Maximum zoom scale
 
     // Multi-touch tracking
@@ -274,15 +275,25 @@
     // Zoom buttons
     document.getElementById('zoomInBtn').addEventListener('click', () => {
       if (scale < maxScale) {
-        scale += 0.1;
+        scale += 0.2;
         drawMaze();
+        if(document.getElementById('zoomOutBtn').hidden == true){
+          document.getElementById('zoomOutBtn').hidden = false;
+        }
+      }else{
+        document.getElementById('zoomInBtn').hidden=true;
       }
     });
 
     document.getElementById('zoomOutBtn').addEventListener('click', () => {
       if (scale > minScale) {
-        scale -= 0.1;
+        scale -= 0.2;
         drawMaze();
+        if(document.getElementById('zoomInBtn').hidden == true){
+          document.getElementById('zoomInBtn').hidden = false;
+        }
+      }else{
+        document.getElementById('zoomOutBtn').hidden=true;
       }
     });
 
